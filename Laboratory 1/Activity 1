@@ -27,8 +27,13 @@ and also for search and rescue activities, and personal companionship.
 
 In the program code attached below, the only function that has been removed is the lie_down() function,  
 and it is replaced by a new function which is the walk() function. It shows the ability to walk similarly to a dog. 
-The sequence of movement of the robot is walk, sit, wave, stand, and walk again.  
+The sequence of movement of the robot is walk, sit, wave, stand, and walk again. In the walk() function, 
+each leg has joints that need to move in a synchronized way to create a proper walking motion. 
+The movement of these joints is controlled using the sine function. 
+The sine function is often used in robotics because it creates smooth, wave-like motions, similar to how animals walk.
 
+Link below is the simulation of the robot, performing the given sequence of movements.  
+https://github.com/user-attachments/assets/b5691d98-a661-4c88-a334-fd28e1580e6
 .................................................................................................................
 /*
  * Copyright 1996-2024 Cyberbotics Ltd.
@@ -207,5 +212,3 @@ int main(int argc, char **argv) {
   return EXIT_FAILURE;
 }
 .................................................................................................................
-
-https://github.com/user-attachments/assets/b5691d98-a661-4c88-a334-fd28e1580e65
