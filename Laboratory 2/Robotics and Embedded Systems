@@ -1,0 +1,195 @@
+Elective 2 – Robotics Technology
+Laboratory Activity 2: Robotics and Embedded Systems
+S.Y. 2024-2025, 2nd Semester
+February 23, 2025
+Seth Paul C. Babayson
+BSECE-4A
+
+ABSTRACT:
+This experiment involves building a robot that detects and avoids obstacles using an ultrasonic sensor and motors controlled by an Arduino. 
+The robot’s movement is based on distance readings from the sensor, with the Arduino adjusting motor actions accordingly. 
+A Webots simulation was used to test the robot's behavior, where it successfully avoided obstacles by stopping or 
+changing direction when the sensor detected objects within a 30 cm range. 
+The results showed effective obstacle avoidance, and adjustments to the motor speed and sensor threshold improved performance. 
+This project demonstrates how sensor and motor integration can enable robots to navigate autonomously.
+....................................................................................
+Arduino code for obstacle detection 
+....................................................................................
+
+#include <Servo.h>
+
+#define leftF 4
+#define rightF 12
+#define ENA 5
+#define ENB 3
+#define leftB 8
+#define rightB 7
+
+const int trig = 6;
+const int echo = 2;
+float duration, distance;
+
+unsigned long lastSweepTime = 0;
+int sweepDelay = 20;     // Servo step delay
+int servoAngle = 0;
+int servoDir = 10; 
+
+Servo servo;
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(leftF, OUTPUT);
+  pinMode(rightF, OUTPUT);
+  pinMode(leftB, OUTPUT);
+  pinMode(rightB, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+  pinMode(trig, OUTPUT);
+  pinMode(echo, INPUT);
+  
+  servo.attach(9);
+  Serial.begin(9600);
+
+}
+
+void forward(){
+  digitalWrite(leftF, HIGH);
+  digitalWrite(leftB, LOW);
+  digitalWrite(rightF, HIGH);
+  digitalWrite(rightB, LOW);
+  analogWrite(ENA, 130);
+  analogWrite(ENB, 130);
+}
+
+void backward(){
+  digitalWrite(leftF, LOW);
+  digitalWrite(leftB, HIGH);
+  digitalWrite(rightF, LOW);
+  digitalWrite(rightB, HIGH);
+  analogWrite(ENA, 70);
+  analogWrite(ENB, 70);
+}
+
+void turn(){
+  digitalWrite(leftF, HIGH);
+  digitalWrite(leftB, LOW);
+  digitalWrite(rightF, LOW);
+  digitalWrite(rightB, HIGH);
+  analogWrite(ENA, 80);
+  analogWrite(ENB, 80);
+}
+
+void stop(){
+  digitalWrite(leftF, LOW);
+  digitalWrite(leftB, LOW);
+  digitalWrite(rightF, LOW);
+  digitalWrite(rightB, LOW);
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+}
+
+void update() {
+  if (millis() - lastSweepTime >= sweepDelay) {
+    servo.write(servoAngle);
+    servoAngle += servoDir;
+    if (servoAngle >= 180 || servoAngle <= 0) {
+      servoDir *= -1;  // Change direction at edges
+    }
+    lastSweepTime = millis();
+  }
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  updateServoSweep();
+
+  digitalWrite(trig, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig, LOW); 
+
+  duration = pulseIn(echo, HIGH);
+  distance = (duration * 0.0343)/2;
+  Serial.println(distance);
+  delay(50);
+  
+  if(distance <= 30){
+      stop();
+      delay(1000);
+      backward();
+      delay(1000);
+      turn();
+      delay(1000);
+      stop();
+      
+  }else{
+      stop();
+      forward();
+  }
+}
+
+....................................................................................
+Webots Simulation code
+....................................................................................
+
+
+#include <webots/robot.h>
+#include <webots/motor.h>
+#include <webots/distance_sensor.h>
+
+#define timestep 64
+#define speed 6.28
+#define distance 80  // Sensor value above this = obstacle
+#define backward 20     // Number of time steps to move backward (approx. 640 ms)
+
+int main(int argc, char **argv) {
+  wb_robot_init();
+
+  // Motors
+  WbDeviceTag left_motor = wb_robot_get_device("left wheel motor");
+  WbDeviceTag right_motor = wb_robot_get_device("right wheel motor");
+  wb_motor_set_position(left_motor, INFINITY);
+  wb_motor_set_position(right_motor, INFINITY);
+
+  // Distance sensors
+  WbDeviceTag ps0 = wb_robot_get_device("ps0");  // Front-right
+  WbDeviceTag ps7 = wb_robot_get_device("ps7");  // Front-left
+  wb_distance_sensor_enable(ps0, timestep);
+  wb_distance_sensor_enable(ps7, timestep);
+
+  while (wb_robot_step(timestep) != -1) {
+    double ps0_val = wb_distance_sensor_get_value(ps0);
+    double ps7_val = wb_distance_sensor_get_value(ps7);
+
+    if (ps0_val > distance || ps7_val > distance) {
+      // Move backward before turning
+      wb_motor_set_velocity(left_motor, -0.3 * speed);
+      wb_motor_set_velocity(right_motor, -0.3 * speed);
+      for (int i = 0; i < backward; i++) {
+        wb_robot_step(timestep);
+      }
+
+      // Decide direction based on which sensor detects the obstacle
+      if (ps0_val > ps7_val) {
+        // Obstacle on right, turn left
+        wb_motor_set_velocity(left_motor, 0.1 * speed);
+        wb_motor_set_velocity(right_motor, 0.9 * speed);
+      } else {
+        // Obstacle on left, turn right
+        wb_motor_set_velocity(left_motor, 0.9 * speed);
+        wb_motor_set_velocity(right_motor, 0.1 * speed);
+      }
+
+      // Let it turn for a moment
+      for (int i = 0; i < 10; i++) {
+        wb_robot_step(timestep);
+      }
+    } else {
+      // Move forward
+      wb_motor_set_velocity(left_motor, 0.3* speed);
+      wb_motor_set_velocity(right_motor, 0.3 * speed);
+    }
+  }
+
+  wb_robot_cleanup();
+  return 0;
+}
+
