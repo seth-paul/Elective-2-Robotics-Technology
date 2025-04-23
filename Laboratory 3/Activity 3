@@ -1,0 +1,64 @@
+#include <Servo.h>
+
+#include <Stepper.h>
+const int steps = 2038;
+Stepper stepper = Stepper(steps, 8, 9, 10, 11);
+
+#define rightF 12
+#define ENB 3
+
+
+Servo servo;
+
+void setup() {
+  // put your setup code here, to run once:
+  servo.attach(7);
+  pinMode(rightF, OUTPUT);
+
+  pinMode(ENB, OUTPUT);
+
+  stepper.setSpeed(10);
+
+  }
+  
+
+void motorPWM(float freqPer){
+  
+  float freq = freqPer/100; 
+  float duty = 255*freq;
+  digitalWrite(rightF, HIGH);
+  analogWrite(ENB, duty);
+}
+
+void stop(){
+
+  analogWrite(ENB, 0);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+  motorPWM(50);
+  delay(3000);
+  motorPWM(75);
+  delay(3000);
+  motorPWM(100);
+  delay(3000);
+  stop();
+  delay(1000);
+
+  for(int i = 0; i <= 180; i++){
+    servo.write(i);
+    delay(10);
+  }
+
+
+	stepper.step(steps);
+	delay(10);
+	
+  stepper.step(-steps);
+	delay(10);
+ 
+	// Rotate CCW quickly at 10 RPM
+
+}
