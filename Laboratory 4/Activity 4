@@ -1,0 +1,53 @@
+#define leftF 4
+#define rightF 12
+#define ENA 5
+#define ENB 3
+#define leftB 8
+#define rightB 7
+
+void setup() {
+  // put your setup code here, to run once:
+  pinMode(leftF, OUTPUT);
+  pinMode(rightF, OUTPUT);
+  pinMode(leftB, OUTPUT);
+  pinMode(rightB, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+}
+
+void forward(){
+  digitalWrite(leftF, HIGH);
+  digitalWrite(leftB, LOW);
+  digitalWrite(rightF, HIGH);
+  digitalWrite(rightB, LOW);
+  analogWrite(ENA, 128);
+  analogWrite(ENB, 128);
+}
+
+void turn(){
+  digitalWrite(leftF, HIGH);
+  digitalWrite(leftB, LOW);
+  digitalWrite(rightF, LOW);
+  digitalWrite(rightB, HIGH);
+  analogWrite(ENA, 150);
+  analogWrite(ENB, 150);
+}
+
+void stop(){
+  digitalWrite(leftF, LOW);
+  digitalWrite(leftB, LOW);
+  digitalWrite(rightF, LOW);
+  digitalWrite(rightB, LOW);
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  forward();
+  delay(2700);
+  turn();
+  delay(200);
+  stop();
+  delay(4000);
+}
